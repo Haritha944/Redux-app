@@ -13,7 +13,9 @@ import Login from './Components/Login/Login';
 import Register from './Components/Register/Register';
 import {store} from './app/store';
 import EditHome from './Components/Home/EditHome';
-import AdminEditUser from './Components/AdminDashBoard/AdminEdit';
+import AdminCreate from './Components/AdminDashBoard/AdminCreate';
+import AdminEdit from './Components/AdminDashBoard/AdminEdit'
+
 
 function App() {
   return (
@@ -28,7 +30,9 @@ function App() {
           <Route path ='/loginpage' element={<Login />}></Route>
           <Route path ='/registerpage' element={<Register />}></Route>
           <Route path ='/edituser' element={<EditHome />}></Route>
-          <Route path="/adedituser/:userId" element={<AdminEditUser />} />
+          <Route path ='/admin/create' element={<AdminCreate />}></Route>
+          <Route path ='/admin/edit/:userId' element={<AdminEdit />}></Route>
+          
         </Routes>
        </Router>
       </Provider>

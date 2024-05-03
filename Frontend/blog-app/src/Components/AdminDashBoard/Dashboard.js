@@ -104,6 +104,7 @@ const Dashboard = () => {
                                                 <td>{user.email}</td>
                                                 <td>{user.is_active ? 'True' : 'False'}</td>
                                                 <td><a className='text-red-700 font-bold cursor-pointe' onClick={() => block_Or_Unblock_User(user.id,user.is_active ? true : false)}>{user.is_active ? "Block" : "UnBlock"}</a></td>
+                                                <td><NavLink className='edituser' to={`/admin/edit/${user.id}`}>Edit</NavLink></td>
                                                 
                                             </tr>
                                         ))}
@@ -111,6 +112,7 @@ const Dashboard = () => {
                                     </tbody>
                                 </table>
                             </div>
+                            <button onClick={() => navigate('/admin/create')} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Create</button>
 
                         </div>
 

@@ -1,108 +1,170 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams,useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../Layout';
 import { useDispatch, useSelector } from 'react-redux';
+import { BASE_URL } from '../../features/users/userApi';
 import { updateUser } from '../../features/users/UserSlice';
 import { default_profile_link } from '../../assets/defaultprofile';
 import './AdminEdit.css'
+import toast, { Toaster } from 'react-hot-toast';
+
 
 const AdminEditUser = () => {
-  const { userId } = useParams();
+  const user = useSelector((state) => state.user); 
+  const { userId } = useParams(); // Assuming userId is passed as a route parameter
+  const navigate = useNavigate();
+  const storedToken = localStorage.getItem('jwtToken');
+  const [isLoading, setIsLoading] = useState(true);
   const dispatch = useDispatch();
-  const [formData, setFormData] = useState({
-    user_image: null,
-    first_name: '',
-    last_name: '',
-    email: '',
+  const [passwordCheck, setPasswordCheck] = useState(false);
+  const notify = () => toast('User data changed successfully');
+  const [formData, updateFormData] = useState({
+    user_image:  null,
+    first_name: user.user ? user.user.first_name : '',
+    file:null,
+    last_name: user.user ? user.user.last_name : '',
+    email: user.user ? user.user.email : '',
     password: '',
   });
 
-  useEffect(() => {
-    // Fetch user details based on userId
-    fetchData();
-  }, [userId]);
 
-  const fetchData = async () => {
+  async function UserDetails() {
     try {
-      // Fetch user details from API based on userId
-      const response = await axios.get(`/api/users/${userId}`);
-      setFormData({
-        user_image: response.data.user_image || null,
+      const response = await axios.get(`${BASE_URL}/users/user-detail/${user.user_id}`);
+      console.log(response)
+      dispatch(updateUser(response.data));
+      updateFormData({
         first_name: response.data.first_name,
         last_name: response.data.last_name,
         email: response.data.email,
-        password: '', // Initialize password field with empty string
       });
     } catch (error) {
       console.error('Error fetching user details:', error);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
+  }
   const updateUserDetails = async () => {
+    console.log('User Details form --> ',formData);
     try {
-      // Update user details in the backend
-      const response = await axios.put(`/api/users/${userId}`, formData);
-      // Dispatch action to update user details in Redux store
+      const updatedUser = {
+        user_image: formData.user_image,
+        first_name: formData.first_name,
+        email: formData.email,
+        last_name: formData.last_name,
+        password: formData.password,
+      };
+      if (!formData.password) {
+        setPasswordCheck(true);
+        return;
+      } else {
+        setPasswordCheck(false);
+      }
+      console.log("This is the updaate user",updateUser)
+      const imageFormData = new FormData();
+      imageFormData.append('user_image',formData.user_image)
+      imageFormData.append('password',formData.password)
+      imageFormData.append('first_name',formData.first_name)
+      imageFormData.append('last_name',formData.last_name)
+      imageFormData.append('email',formData.email)
+      const response = await axios.put(`${BASE_URL}/users/user-detail/${user.user_id}/`, imageFormData);
+
+      if (response.status == 200) {
+        notify()
+        formData.password = ''
+      }
+
+
+      console.log("This is my data check this one and verify it", response.status)
+
       dispatch(updateUser(response.data));
-      // Redirect or show notification after successful update
+
+      navigate('/admindashboard');
     } catch (error) {
       console.error('Error updating user details:', error);
     }
   };
 
+
+
   return (
     <Layout>
-      <div className='maindivedituser'>
-        <div className='detailsedit'>
-          <h2>Edit User Details</h2>
-          <div className=''>
-            <img src={formData.user_image || default_profile_link} alt='Profile' />
-            <div className='boxfordata'>
-              <input
-                type='file'
-                className='form-control'
-                id='profile-img'
-                onChange={(e) => setFormData({ ...formData, user_image: e.target.files[0] })}
-              />
-              <label htmlFor='firstname'>Enter the firstname</label>
-              <input
-                type='text'
-                name='first_name'
-                id='firstname'
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-              />
-              <label htmlFor='lastname'>Enter the Lastname</label>
-              <input
-                type='text'
-                name='lastname'
-                id='lastname'
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-              />
-              <label htmlFor='email'>Enter the Email</label>
-              <input
-                type='text'
-                name='email'
-                id='email'
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-              <label htmlFor='password'>Password</label>
-              <input
-                type='password'
-                name='password'
-                id='password'
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-              <button class='mt-3'onClick={updateUserDetails}>s</button>
-            </div>
-          </div>
-        </div>
+       <div className='maindivedituser'>
+  <div className='detailsedit'>
+    {
+       <p className='heading'>Edit Admin</p>
+    }
+    <div className=''>
+    {user && user.user && user.user.user_image && (
+      
+      <img src={user.user.user_image ? user.user.user_image : default_profile_link} />  )}
+      <div className='boxfordata'>
+        <input
+          type="file"
+          className="form-control"
+          id="profile-img"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            console.log('upload file --> ',file);
+            if (file) {
+                updateFormData({ ...formData, user_image:file});
+              };
+            }}
+        />
+
+        <label htmlFor="firstname">Enter the firstname</label>
+        <input
+          type="text"
+          name="first_name"
+          id="firstname"
+          value={formData.first_name}
+          onChange={(e) => updateFormData({ ...formData, first_name: e.target.value })}
+        />
+
+        <label htmlFor="lastname">Enter the Lastname</label>
+        <input type="text"
+          name="lastname"
+          id="lastname"
+          value={formData.last_name}
+          onChange={(e) => updateFormData({ ...formData, last_name: e.target.value })}
+
+        />
+        <label htmlFor="email">Enter the Email</label>
+        <input
+          type="text"
+          name="email"
+          id="email"
+          value={formData.email}
+          onChange={(e) => { updateFormData({ ...formData, email: e.target.value }) }}
+        />
+        <label htmlFor="lastname">Password</label>
+        <input type="password"
+          name="password"
+          id="Password"
+          onChange={(e) => { updateFormData({ ...formData, password: e.target.value }) }} />
+        {passwordCheck && (
+          <span className='error-message'>Password is required for updating user details.</span>
+        )}
+        <a onClick={updateUserDetails} className='edituser'>Submit Edit info</a>
       </div>
-    </Layout>
+    </div>
+  </div>
+
+<Toaster
+  toastOptions={{
+    className: '',
+    style: {
+      border: '1px solid #008000',
+      color: '#FFFFFF',
+      background: '#008000',
+    },
+  }}
+/>
+</div>
+   
+</Layout>
+
   );
 };
 
